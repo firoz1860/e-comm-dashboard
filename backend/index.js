@@ -10,7 +10,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-app.post("/register",verifyToken, async (req, resp) => {
+app.post("/register", async (req, resp) => {
     let user = new User(req.body);
     let result = await user.save();
     result = result.toObject();
@@ -23,9 +23,12 @@ app.post("/register",verifyToken, async (req, resp) => {
     })
 })
 
-app.post("/login",verifyToken, async (req, resp) => {
+app.post("/login", async (req, resp) => {
     if (req.body.password && req.body.email) {
-        let user = await User.findOne(req.body).select("-password");
+        const { email, password } = req.body;
+        const user = await User.findOne({ email,password });
+        console.warn(user);
+        console.warn(req.body);
         if (user) {
             Jwt.sign({user}, jwtKey, {expiresIn:"2h"},(err,token)=>{
                 if(err){
@@ -37,7 +40,7 @@ app.post("/login",verifyToken, async (req, resp) => {
             resp.send({ result: "No User found" })
         }
     } else {
-        resp.send({ result: "No User found" })
+        resp.send({ result: "Please Enter details" })
     }
 });
 
@@ -109,7 +112,9 @@ app.get("/search/:key",verifyToken, async (req, resp) => {
 function verifyToken(req,resp,next) {
     let token = req.headers['authorization'];
     if(token){
-        token = token.split(' ')[1];
+        console.warn(token);
+        // token = token.split(' ')[1];
+        console.warn(token);
         Jwt.verify(token,jwtKey,(err,valid)=>{
             if(err){
                 resp.status(401).send({result:"Please provide valid token"})
